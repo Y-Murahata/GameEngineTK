@@ -117,10 +117,47 @@ void Game::Render()
 	m_d3dContext->IASetInputLayout(inputLayout.Get());
 
 	primitiveBatch->Begin();
-	primitiveBatch->DrawLine(
-		VertexPositionColor(Vector3(0, 0, 0), Color(1, 1, 1)),
-		VertexPositionColor(Vector3(m_outputWidth, m_outputHeight, 0), Color(1, 1, 1))
+	primitiveBatch->DrawQuad(
+		VertexPositionColor(Vector3(50, 50, 0), Color(0, 0, 0)),
+		VertexPositionColor(Vector3(50, 600-50, 0), Color(0, 0, 0)),
+		VertexPositionColor(Vector3(800-50, 600-50, 0), Color(0, 0, 0)),
+		VertexPositionColor(Vector3(800-50, 50, 0), Color(0, 0, 0))
 	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(100, 200, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(300, 200, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(100, 400, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(300, 400, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(300, 200, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(300, 400, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(300, 150, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(350, 200, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(350, 150, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(400, 200, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(450, 200, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(650, 200, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(650, 200, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(500, 320, 0), Color(1, 1, 1))
+	);
+	primitiveBatch->DrawLine(
+		VertexPositionColor(Vector3(450, 300, 0), Color(1, 1, 1)),
+		VertexPositionColor(Vector3(600, 350, 0), Color(1, 1, 1))
+	);
+
+
+
 	primitiveBatch->End();
 
 
