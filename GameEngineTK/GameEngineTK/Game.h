@@ -10,6 +10,7 @@
 #include <Effects.h>
 #include <CommonStates.h>
 #include <SimpleMath.h>
+#include <Model.h>
 #include "DebugCamera.h"
 
 
@@ -82,5 +83,21 @@ private:
 	DirectX::SimpleMath::Matrix m_view;
 	DirectX::SimpleMath::Matrix m_proj;
 
+	//	デバックカメラ
 	std::unique_ptr<DebugCamera> m_debugCamera;
+
+	//	エフェクトファクトリー
+	std::unique_ptr<DirectX::EffectFactory> m_factory;
+	//	モデル
+	std::unique_ptr<DirectX::Model> m_model;				//	地面
+	std::unique_ptr<DirectX::Model> m_modelSkydome;			//	空
+	std::unique_ptr<DirectX::Model> m_modelSphere;			//	球
+	
+	//	球ワールド行列
+	DirectX::SimpleMath::Matrix m_worldSphere[20];
+	//	地面ワールド行列
+	DirectX::SimpleMath::Matrix m_worldGround[10000];
+
+	//	回転カウンター
+	float m_rotateCnt;
 };

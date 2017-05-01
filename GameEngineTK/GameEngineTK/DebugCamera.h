@@ -5,6 +5,7 @@
 #include <SimpleMath.h>
 #include <Mouse.h>
 
+
 // デバッグ用カメラクラス
 class DebugCamera
 {

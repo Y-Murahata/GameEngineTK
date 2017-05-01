@@ -52,7 +52,7 @@ void Game::Initialize(HWND window, int width, int height)
 	m_view = Matrix::CreateLookAt(Vector3(0.f, 2.f, 5.f),
 		Vector3::Zero, Vector3::UnitY);
 	m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
-		float(m_outputWidth) / float(m_outputHeight), 0.1f, 10.f);
+		float(m_outputWidth) / float(m_outputHeight), 0.1f, 300.f);
 
 	m_effect->SetView(m_view);
 	m_effect->SetProjection(m_proj);
@@ -71,6 +71,17 @@ void Game::Initialize(HWND window, int width, int height)
 
 	//	デバッグカメラ生成
 	m_debugCamera = std::make_unique<DebugCamera>(m_outputWidth,m_outputHeight);
+
+	//	エフェクトファクトリー生成
+	m_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
+	m_factory->SetDirectory(L"Resouces");
+	//	モデルの読み込み
+	m_model = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/ground1m.cmo", *m_factory);
+	m_modelSkydome = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/skydome.cmo", *m_factory);
+	m_modelSphere = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/sphere5m.cmo", *m_factory);
+
+	//	回転カウンター
+	m_rotateCnt = 0;
 }
 
 // Executes the basic game loop.
@@ -94,10 +105,66 @@ void Game::Update(DX::StepTimer const& timer)
 
 	//========== 毎フレーム更新処理はここに書く ==========
 	m_debugCamera->Update();
+
+	
 	//	ビュー行列を取得
 	m_view = m_debugCamera->GetCameraMatrix();
 
+	//	球のワールド行列を計算------------------------
+	//	内側の球
+	for (int i = 0; i < 20; i++)
+	{
+		//	スケール
+		Matrix scalemat = Matrix::CreateScale(1.0f);
 
+		//	ロール
+		Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(0.0f));
+		//	ピッチ
+		Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(0.0f));
+
+		Matrix rotmatY;
+		//	ヨー
+		if (i < 10)
+		rotmatY = Matrix::CreateRotationY(XMConvertToRadians((i + m_rotateCnt) * 36.0f));
+		if (i >= 10)
+		rotmatY = Matrix::CreateRotationY(XMConvertToRadians((i - m_rotateCnt) * 36.0f));
+		
+		//	回転行列
+		Matrix rotmat = rotmatZ * rotmatX * rotmatY;
+
+		//	位置
+		Matrix transmat;		
+		if (i < 10)
+		transmat = Matrix::CreateTranslation(20.0f, 0, 0);
+		if(i >= 10)
+		transmat = Matrix::CreateTranslation(40.0f, 0, 0);
+
+
+		//	球マトリックスの更新
+		m_worldSphere[i] = scalemat * transmat * rotmat;
+	}
+	//	回転カウンター更新
+	m_rotateCnt += 1.0f/60.0f;
+	if (m_rotateCnt >= 360)
+		m_rotateCnt = 0;
+	//-------------地面のワールド行列-----------------
+	for (int i = 0; i < 100; i++)
+	{
+		for (int j = 0; j < 100; j++)
+		{
+			//	位置
+			Matrix transmat = Matrix::CreateTranslation(i,0,j);
+
+
+			//	地面マトリックスの更新
+			m_worldGround[i * j] = transmat;
+		}
+
+
+	
+	}
+	
+	//------------------------------------------------
 }
 
 // Draws the scene.
@@ -126,16 +193,27 @@ void Game::Render()
 	m_effect->Apply(m_d3dContext.Get());
 	m_d3dContext->IASetInputLayout(m_inputLayout.Get());
 
+	//	地面モデルの描画
+	//for (int i = 0; i < 10000; i++)
+	//{
+	//	m_model->Draw(m_d3dContext.Get(), m_states, m_worldGround[i], m_view, m_proj);
+	//}
+
+	m_modelSkydome->Draw(m_d3dContext.Get(), m_states, m_world, m_view, m_proj);
+
+	//	球の表示
+	for (int i = 0; i < 20; i++)
+	{
+		m_modelSphere->Draw(m_d3dContext.Get(), m_states, m_worldSphere[i], m_view, m_proj);
+	}
+	
+
 	m_batch->Begin();
 
 	//	三角形を表示
 	VertexPositionColor v1(Vector3(0.f, 0.5f, 0.5f), Colors::Yellow);
 	VertexPositionColor v2(Vector3(0.5f, -0.5f, 0.5f), Colors::Yellow);
 	VertexPositionColor v3(Vector3(-0.5f, -0.5f, 0.5f), Colors::Yellow);
-
-	m_batch->DrawTriangle(v1, v2, v3);
-
-
 	
 	m_batch->End();
 

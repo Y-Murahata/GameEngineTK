@@ -1,4 +1,5 @@
 ﻿// デバッグ用カメラクラス
+#include "pch.h"
 #include "DebugCamera.h"
 
 using namespace DirectX;
