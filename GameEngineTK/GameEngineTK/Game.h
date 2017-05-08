@@ -12,6 +12,7 @@
 #include <SimpleMath.h>
 #include <Model.h>
 #include "DebugCamera.h"
+#include <Keyboard.h>
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -92,12 +93,31 @@ private:
 	std::unique_ptr<DirectX::Model> m_model;				//	地面
 	std::unique_ptr<DirectX::Model> m_modelSkydome;			//	空
 	std::unique_ptr<DirectX::Model> m_modelSphere;			//	球
+	std::unique_ptr<DirectX::Model> m_modelTeapot;			//	ティーポッド
+	std::unique_ptr<DirectX::Model> m_modelHead;			//	頭
 	
 	//	球ワールド行列
 	DirectX::SimpleMath::Matrix m_worldSphere[20];
 	//	地面ワールド行列
-	DirectX::SimpleMath::Matrix m_worldGround[10000];
+	DirectX::SimpleMath::Matrix m_worldTeapot[20];
+
+	float m_teaPotPosX[20];
+	float m_teaPotPosZ[20];
+
+	float m_worldTimer;
 
 	//	回転カウンター
 	float m_rotateCnt;
+
+	//	キーボード
+	std::unique_ptr<DirectX::Keyboard> m_keyboard;
+
+	//	自機の座標
+	DirectX::SimpleMath::Vector3 tank_pos;
+
+	//	自機の傾き
+	float m_tankRot;
+
+	//	自機のワールド行列
+	DirectX::SimpleMath::Matrix m_worldTank;
 };
