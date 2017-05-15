@@ -19,6 +19,7 @@ using namespace DirectX::SimpleMath;
 using Microsoft::WRL::ComPtr;
 
 
+
 Game::Game() :
     m_window(0),
     m_outputWidth(800),
@@ -50,14 +51,21 @@ void Game::Initialize(HWND window, int width, int height)
 
 
 	//	========== 初期化はここに書く ===========
+	//	カメラの作成
+	m_Camera = std::make_unique<FollowCamera>(m_outputWidth, m_outputHeight);
+
 	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(m_d3dContext.Get());
 
 	m_effect = std::make_unique<BasicEffect>(m_d3dDevice.Get());
 
-	m_view = Matrix::CreateLookAt(Vector3(0.f, 2.f, 5.f),
-		Vector3::Zero, Vector3::UnitY);
-	m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
-		float(m_outputWidth) / float(m_outputHeight), 0.1f, 300.f);
+	//m_view = Matrix::CreateLookAt(Vector3(0.f, 2.f, 5.f),
+	//	Vector3::Zero, Vector3::UnitY);
+	//m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
+	//	float(m_outputWidth) / float(m_outputHeight), 0.1f, 300.f);
+
+	m_view = m_Camera->GetViewMatrix();
+
+	m_proj = m_Camera->GetProjMatrix();;
 
 	m_effect->SetView(m_view);
 	m_effect->SetProjection(m_proj);
@@ -75,7 +83,9 @@ void Game::Initialize(HWND window, int width, int height)
 		m_inputLayout.GetAddressOf());
 
 	//	デバッグカメラ生成
-	m_debugCamera = std::make_unique<DebugCamera>(m_outputWidth,m_outputHeight);
+	//m_debugCamera = std::make_unique<DebugCamera>(m_outputWidth,m_outputHeight);
+
+	
 
 	//	エフェクトファクトリー生成
 	m_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
@@ -146,11 +156,6 @@ void Game::Update(DX::StepTimer const& timer)
     elapsedTime;
 
 	//========== 毎フレーム更新処理はここに書く ==========
-	m_debugCamera->Update();
-
-	
-	//	ビュー行列を取得
-	m_view = m_debugCamera->GetCameraMatrix();
 
 	//	球のワールド行列を計算------------------------
 	//	内側の球
@@ -227,7 +232,7 @@ void Game::Update(DX::StepTimer const& timer)
 	//	Wキーが押されたら
 	if (key.W)
 	{
-		//	移動ベクトル（Z座標前進）
+		//	移動ベクトル（W座標前進）
 		Vector3 moveV(0, 0, -0.1f);
 		//	移動ベクトルを自機の角度に合わせて回転する(スケールを加味しない計算)		
 		Matrix rotmat = Matrix::CreateRotationY(XMConvertToRadians(m_tankRot));
@@ -238,7 +243,7 @@ void Game::Update(DX::StepTimer const& timer)
 	}
 	if (key.S)
 	{
-		//	移動ベクトル（Z座標前進）
+		//	移動ベクトル（S座標前進）
 		Vector3 moveV(0, 0, 0.1f);
 		//	移動ベクトルを自機の角度に合わせて回転する(スケールを加味しない計算)
 		Matrix rotmat = Matrix::CreateRotationY(XMConvertToRadians(m_tankRot));
@@ -255,9 +260,6 @@ void Game::Update(DX::StepTimer const& timer)
 		m_tankRot += 5.0f;
 	}
 
-
-
-
 	{//	自機の座標を計算
 
 		Matrix transmat = Matrix::CreateTranslation(tank_pos);
@@ -266,8 +268,13 @@ void Game::Update(DX::StepTimer const& timer)
 		//	ワールドを更新
 		m_worldTank = rotmatY * transmat;
 	}	
-	
-	
+
+	m_Camera->SetTargetPos(tank_pos);
+	m_Camera->SetTargetAngle(m_tankRot);
+
+	//	カメラのアップデート
+	m_Camera->Update();
+
 	//------------------------------------------------
 }
 
@@ -289,6 +296,9 @@ void Game::Render()
 	m_d3dContext->OMSetBlendState(m_states.Opaque(), nullptr, 0xFFFFFFFF);
 	m_d3dContext->OMSetDepthStencilState(m_states.DepthNone(), 0);
 	m_d3dContext->RSSetState(m_states.CullNone());
+
+	//	ビュー行列の取得
+	m_view = m_Camera->GetViewMatrix();
 
 	m_effect->SetView(m_view);
 	m_effect->SetProjection(m_proj);

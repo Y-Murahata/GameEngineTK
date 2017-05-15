@@ -13,6 +13,7 @@
 #include <Model.h>
 #include "DebugCamera.h"
 #include <Keyboard.h>
+#include "FollowCamera.h"
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -86,6 +87,9 @@ private:
 
 	//	デバックカメラ
 	std::unique_ptr<DebugCamera> m_debugCamera;
+
+	//	カメラ
+	std::unique_ptr<FollowCamera> m_Camera;
 
 	//	エフェクトファクトリー
 	std::unique_ptr<DirectX::EffectFactory> m_factory;
