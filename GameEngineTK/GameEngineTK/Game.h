@@ -4,6 +4,13 @@
 
 #pragma once
 
+#include <windows.h>
+
+#include <wrl/client.h>
+
+#include <DirectXMath.h>
+#include <DirectXColors.h>
+
 #include "StepTimer.h"
 #include <PrimitiveBatch.h>
 #include <VertexTypes.h>>
@@ -14,6 +21,9 @@
 #include "DebugCamera.h"
 #include <Keyboard.h>
 #include "FollowCamera.h"
+#include "Obj3D.h"
+#include <vector>
+
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -21,6 +31,18 @@
 class Game
 {
 public:
+
+	enum PLAYER_PARTS
+	{
+		PLAYER_PARTS_LEG,
+		PLAYER_PARTS_BODY,
+		PLAYER_PARTS_SHOULDER,
+		PLAYER_PARTS_ARM,
+		PLAYER_PARTS_WEPON,
+		PLAYER_PARTS_HEAD,
+
+		PLAYER_PARTS_NUM
+	};
 
     Game();
 
@@ -94,8 +116,8 @@ private:
 	//	エフェクトファクトリー
 	std::unique_ptr<DirectX::EffectFactory> m_factory;
 	//	モデル
-	std::unique_ptr<DirectX::Model> m_model;				//	地面
-	std::unique_ptr<DirectX::Model> m_modelSkydome;			//	空
+	Obj3D m_objSkydome;										//	空
+	Obj3D m_objGround;									//	地面
 	std::unique_ptr<DirectX::Model> m_modelSphere;			//	球
 	std::unique_ptr<DirectX::Model> m_modelTeapot;			//	ティーポッド
 	std::unique_ptr<DirectX::Model> m_modelHead;			//	頭
@@ -124,4 +146,16 @@ private:
 
 	//	自機のワールド行列
 	DirectX::SimpleMath::Matrix m_worldTank;
+	//	自機2のワールド行列
+	DirectX::SimpleMath::Matrix m_worldTank2;
+
+	//	自機の３Dオブジェクト
+	Obj3D m_ObjPlayer1;
+	Obj3D m_ObjPlayer2;
+
+	std::vector<Obj3D> m_objPlayer;
+	//std::vector<Obj3D> m_ObjPlayer;
+
+
+
 };

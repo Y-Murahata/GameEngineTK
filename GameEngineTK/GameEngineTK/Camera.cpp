@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Camera.h"
 
+
 using namespace DirectX;
 using namespace DirectX::SimpleMath;
 

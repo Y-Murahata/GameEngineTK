@@ -1,5 +1,7 @@
 //	ƒJƒƒ‰ƒNƒ‰ƒX
 #pragma once
+
+#include <d3d11_1.h>
 #include <SimpleMath.h>
 
 class Camera
