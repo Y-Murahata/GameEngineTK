@@ -311,7 +311,7 @@ void Game::CreateDevice()
     UINT creationFlags = 0;
 
 #ifdef _DEBUG
-    creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
+    //creationFlags |= D3D11_CREATE_DEVICE_DEBUG;
 #endif
 
     static const D3D_FEATURE_LEVEL featureLevels [] =

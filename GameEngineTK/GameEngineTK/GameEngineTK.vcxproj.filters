@@ -18,6 +18,7 @@
     <ClInclude Include="DXTKResouces.h" />
     <ClInclude Include="Singleton.h" />
     <ClInclude Include="Enemy.h" />
+    <ClInclude Include="Collision.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -30,6 +31,7 @@
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="DXTKResouces.cpp" />
     <ClCompile Include="Enemy.cpp" />
+    <ClCompile Include="Collision.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
