@@ -40,6 +40,9 @@ Obj3D::Obj3D()
 
 	//	親オブジェクトポインタ
 	m_parent = nullptr;
+
+	//	デフォルトではクォータニオンは使用しない
+	m_UseQuaternion = false;
 }
 
 void Obj3D::LoadModel(const wchar_t * fileName)
@@ -53,11 +56,21 @@ void Obj3D::Update()
 	//	行列の計算=========================================================
 	//	スケーリング行列
 	Matrix scalemat = Matrix::CreateScale(m_scale);
+
+	Matrix rotmat;
 	//	回転行列
-	Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(m_scale.z));
-	Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(m_scale.x));
-	Matrix rotmatY = Matrix::CreateRotationY(XMConvertToRadians(m_scale.y));
-	Matrix rotmat = rotmatZ * rotmatX * rotmatY;
+	if (m_UseQuaternion)
+	{
+		rotmat = Matrix::CreateFromQuaternion(m_rotationQ);
+	}
+	else
+	{
+		//	オイラー角で回転を計算 ZXY
+		Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(m_rotation.z));
+		Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(m_rotation.x));
+		Matrix rotmatY = Matrix::CreateRotationY(XMConvertToRadians(m_rotation.y));
+		rotmat = rotmatZ * rotmatX * rotmatY;
+	}
 	//	並行移動行列
 	Matrix transmat = Matrix::CreateTranslation(m_translation);
 	//	ワールドを更新

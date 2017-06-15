@@ -11,7 +11,7 @@
 # }
  Transform {
   translation 0.000000 0.000000 0.000000
-  rotation 0.000000 1.000000 0.000000 3.141593
+  rotation 0.000000 0.000000 0.000000 0.000000
   scale 1.000000 1.000000 1.000000
   children [
        DEF Parts_rb07_1_N

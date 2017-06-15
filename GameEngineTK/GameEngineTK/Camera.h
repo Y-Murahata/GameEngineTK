@@ -30,6 +30,7 @@ public:
 	void SetNearClip(float nearClip);
 	void SetFarClip(float farClip);
 
+
 protected:
 	//	ƒrƒ…[s—ñ
 	DirectX::SimpleMath::Matrix m_viemat;

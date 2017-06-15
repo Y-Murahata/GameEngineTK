@@ -44,30 +44,17 @@ void Game::Initialize(HWND window, int width, int height)
 
     // TODO: Change the timer settings if you want something other than the default variable timestep mode.
     // e.g. for 60 FPS fixed timestep update logic, call:
-    /*
-    m_timer.SetFixedTimeStep(true);
-    m_timer.SetTargetElapsedSeconds(1.0 / 60);
-    */
-
 
 	//	========== 初期化はここに書く ===========
-	//	キーボードをセット
-	m_keyboard = std::make_unique<Keyboard>();
 	//	カメラの作成
 	m_Camera = std::make_unique<FollowCamera>(m_outputWidth, m_outputHeight);
 
 	//	3Dオブジェクトのメンバ変数
 	Obj3D::InitializeStatic(m_d3dDevice,m_d3dContext,m_Camera.get());
 
-
 	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(m_d3dContext.Get());
 
 	m_effect = std::make_unique<BasicEffect>(m_d3dDevice.Get());
-
-	//m_view = Matrix::CreateLookAt(Vector3(0.f, 2.f, 5.f),
-	//	Vector3::Zero, Vector3::UnitY);
-	//m_proj = Matrix::CreatePerspectiveFieldOfView(XM_PI / 4.f,
-	//	float(m_outputWidth) / float(m_outputHeight), 0.1f, 300.f);
 
 	m_view = (*m_Camera).GetViewMatrix();
 
@@ -88,45 +75,18 @@ void Game::Initialize(HWND window, int width, int height)
 		shaderByteCode, byteCodeLength,
 		m_inputLayout.GetAddressOf());
 
-	//	デバッグカメラ生成
-	//m_debugCamera = std::make_unique<DebugCamera>(m_outputWidth,m_outputHeight);
 
 	//	エフェクトファクトリー生成
 	m_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
 	(*m_factory).SetDirectory(L"Resouces");
+	
+
 	//	モデルの読み込み
 	m_objSkydome.LoadModel(L"Resouces/skydome.cmo");
 	m_objGround.LoadModel(L"Resouces/ground200m.cmo");
 	m_modelSphere = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/sphere5m.cmo", *m_factory);
 	m_modelTeapot = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/teapod1m.cmo", *m_factory);
 	m_modelHead = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/Leg.cmo", *m_factory);
-
-	//	ティーポッドの初期座標を決定
-	for (int i = 0; i < 20; i++)
-	{
-		//	スケール
-		Matrix scalemat = Matrix::CreateScale(1.0f);
-
-		//	ロール
-		Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(0.0f));
-		//	ピッチ
-		Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(0.0f));
-		//	ヨー
-		Matrix rotmatY = Matrix::CreateRotationY(XMConvertToRadians(0.0f));
-		//	回転行列
-		Matrix rotmat = rotmatZ * rotmatX * rotmatY;
-
-		//	位置
-		Matrix transmat;
-		float rad = rand() % 360;
-		m_teaPotPosX[i] = cosf(rad) * (rand() % 100);		//ランダムな角度＊ランダムな距離
-		m_teaPotPosZ[i] = sinf(rad) * (rand() % 100);
-
-		transmat = Matrix::CreateTranslation(m_teaPotPosX[i], 0, m_teaPotPosZ[i]);
-
-		//	球マトリックスの更新
-		m_worldTeapot[i] = scalemat * transmat * rotmat;
-	}
 
 	m_worldTimer = 1.0f;
 
@@ -136,15 +96,23 @@ void Game::Initialize(HWND window, int width, int height)
 	//	回転角を初期化
 	m_tankRot = 0;
 
+	//	プレイヤーの生成
+	m_player = new Player();
+	//	プレイヤーの初期化
+	m_player->Initialize();
 
-	//	自機パーツの読み込み
-	m_objPlayer.resize(PLAYER_PARTS_NUM);	//	パーツ分にリサイズ
-	m_objPlayer[PLAYER_PARTS_LEG].LoadModel(L"Resouces/Leg.cmo");
-	m_objPlayer[PLAYER_PARTS_BODY].LoadModel(L"Resouces/Body.cmo");
-	m_objPlayer[PLAYER_PARTS_SHOULDER].LoadModel(L"Resouces/Shoulder.cmo");
-	m_objPlayer[PLAYER_PARTS_ARM].LoadModel(L"Resouces/Arm.cmo");
-	m_objPlayer[PLAYER_PARTS_WEPON].LoadModel(L"Resouces/Wepon.cmo");
-	m_objPlayer[PLAYER_PARTS_HEAD].LoadModel(L"Resouces/head.cmo");
+	//	エネミーの生成
+	int enemyNum = rand() % 10+1;
+	m_Enemies.resize(enemyNum);
+	for (int i = 0; i < enemyNum; i++)
+	{
+		m_Enemies[i] = std::make_unique<Enemy>();
+
+		m_Enemies[i]->Initialize();
+	}
+
+
+
 }
 
 // Executes the basic game loop.
@@ -168,69 +136,15 @@ void Game::Update(DX::StepTimer const& timer)
 
 	//========== 毎フレーム更新処理はここに書く ==========
 	//	カメラのアップデート
-	m_Camera->Update();
-	m_view = m_Camera->GetViewMatrix();
-	m_proj = m_Camera->GetProjMatrix();
 
+	{// 自機に追従するカメラ
+		m_Camera->SetTargetPos(m_player->GetPosition());
+		m_Camera->SetTargetAngle(m_player->GetAngle().y);
 
-	//	球のワールド行列を計算------------------------
-	//	内側の球
-	for (int i = 0; i < 20; i++)
-	{
-		//	スケール
-		Matrix scalemat = Matrix::CreateScale(1.0f);
-
-		//	ロール
-		Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(0.0f));
-		//	ピッチ
-		Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(0.0f));
-
-		Matrix rotmatY;
-		//	ヨー
-		if (i < 10)
-		rotmatY = Matrix::CreateRotationY(XMConvertToRadians((i + m_rotateCnt) * 36.0f));
-		if (i >= 10)
-		rotmatY = Matrix::CreateRotationY(XMConvertToRadians((i - m_rotateCnt) * 36.0f));
-		
-		//	回転行列
-		Matrix rotmat = rotmatZ * rotmatX * rotmatY;
-
-		//	位置
-		Matrix transmat;		
-		if (i < 10)
-		transmat = Matrix::CreateTranslation(20.0f, 0, 0);
-		if(i >= 10)
-		transmat = Matrix::CreateTranslation(40.0f, 0, 0);
-
-
-		//	球マトリックスの更新
-		m_worldSphere[i] = scalemat * transmat * rotmat;
-	}
-
-	//	ティーポットのワールド行列を計算------------------------
-	for (int i = 0; i < 20; i++)
-	{
-		//	スケール
-		Matrix scalemat = Matrix::CreateScale((sinf(m_rotateCnt) + 1.0f)  * 2.0f + 1.0f);
-
-		//	ロール
-		Matrix rotmatZ = Matrix::CreateRotationZ(XMConvertToRadians(0.0f));
-		//	ピッチ
-		Matrix rotmatX = Matrix::CreateRotationX(XMConvertToRadians(0.0f));
-		//	ヨー
-		Matrix rotmatY = Matrix::CreateRotationY(XMConvertToRadians(0.0f));
-
-		//	Y軸を回転
-		rotmatY = Matrix::CreateRotationY(XMConvertToRadians((m_rotateCnt) * 36.0f));
-
-
-		//	回転行列
-		Matrix rotmat = rotmatZ * rotmatX * rotmatY;
-
-		Matrix transmat = Matrix::CreateTranslation(m_teaPotPosX[i] * m_worldTimer, 0, m_teaPotPosZ[i] * m_worldTimer);
-
-		//	球マトリックスの更新
-		m_worldTeapot[i] = scalemat * rotmat * transmat;
+		// カメラの更新
+		m_Camera->Update();
+		m_view = m_Camera->GetViewMatrix();
+		m_proj = m_Camera->GetProjMatrix();
 	}
 
 	//	回転カウンター更新
@@ -242,70 +156,25 @@ void Game::Update(DX::StepTimer const& timer)
 	if (m_worldTimer <= 0)
 		m_worldTimer = 0;
 
-	//	キーボードのアップデート
-	Keyboard::State key = (*m_keyboard).GetState();
+	//	自機の更新処理
+	m_player->Update();
 
-	//	Wキーが押されたら
-	if (key.W)
+	//	エネミーのアップデート
+	for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end(); itr++) 
 	{
-		//	移動ベクトル（W座標前進）
-		Vector3 moveV(0, 0, -0.1f);
-		//	移動ベクトルを自機の角度に合わせて回転する(スケールを加味しない計算)		
-		Matrix rotmat = Matrix::CreateRotationY(XMConvertToRadians(m_tankRot));
-		moveV = Vector3::TransformNormal(moveV, rotmat);
-		
-		//	自機の座標を移動
-		tank_pos += moveV;
-	}
-	if (key.S)
-	{
-		//	移動ベクトル（S座標前進）
-		Vector3 moveV(0, 0, 0.1f);
-		//	移動ベクトルを自機の角度に合わせて回転する(スケールを加味しない計算)
-		Matrix rotmat = Matrix::CreateRotationY(XMConvertToRadians(m_tankRot));
-		moveV = Vector3::TransformNormal(moveV, rotmat);
-		//	自機の座標を移動
-		tank_pos += moveV;
-	}
-	if (key.D)
-	{
-		m_tankRot -= 5.0f;
-	}
-	if (key.A)
-	{
-		m_tankRot += 5.0f;
-	}
+		//Enemy* enemy = itr->get();		//	デバックし易い
 
-	{//	自機の座標を計算
-		//	パーツ１（親）
-		Matrix transmat = Matrix::CreateTranslation(tank_pos);
-		Matrix rotmatY = Matrix::CreateRotationY(XMConvertToRadians(m_tankRot));	
-		//	ワールドを更新
-		m_worldTank = rotmatY * transmat;
+		//enemy->Update();
 
-		//	パーツ２（子）
-		Matrix transmat2 = Matrix::CreateTranslation(Vector3(0,0.5f,0));
-		Matrix rotmatY2 = Matrix::CreateRotationY(XM_PIDIV2);
-		//	ワールドを更新
-		m_worldTank2 = rotmatY2 * transmat2 * rotmatY * transmat;
-	}	
-
-	m_Camera->SetTargetPos(tank_pos);
-	m_Camera->SetTargetAngle(m_tankRot);
+		(*itr)->Update();					//	短い
+	}
 
 	//	スカイドームの更新処理
 	m_objSkydome.Update();
 	//	地面オブジェの更新
 	m_objGround.Update();
 
-	//	プレイヤーオブジェクトの更新処理
-	for (std::vector<Obj3D>::iterator it = m_objPlayer.begin();
-		it != m_objPlayer.end();
-		it++)
-	{
-		it->Update();
-	}
-	//------------------------------------------------
+
 }
 
 // Draws the scene.
@@ -342,37 +211,21 @@ void Game::Render()
 	//	スカイドームの描画
 	m_objSkydome.Draw();
 	
+	//	プレイヤーの描画
+	m_player->Draw();
 	
-		for (std::vector<Obj3D>::iterator it = m_objPlayer.begin();
-			it != m_objPlayer.end();
-			it++)
+	for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end(); itr++)
 	{
-			it->Draw();
+		//Enemy* enemy = itr->get();		//	デバックし易い
+
+		//enemy->Update();
+
+		(*itr)->Draw();					//	短い
 	}
 
-
-
-	//	球の表示
-	/*for (int i = 0; i < 20; i++)
-	{
-		m_modelSphere->Draw(m_d3dContext.Get(), m_states, m_worldSphere[i], m_view, m_proj);
-	}*/
-
-	//	ティーポッドの描画
-	for (int i = 0; i < 20; i++)
-	{
-		//m_modelTeapot->Draw(m_d3dContext.Get(), m_states, m_worldTeapot[i], m_view, m_proj);
-	}
+	m_batch->Begin();	//	スプライトバッチ開始
 	
-
-	m_batch->Begin();
-
-	//	三角形を表示
-	VertexPositionColor v1(Vector3(0.f, 0.5f, 0.5f), Colors::Yellow);
-	VertexPositionColor v2(Vector3(0.5f, -0.5f, 0.5f), Colors::Yellow);
-	VertexPositionColor v3(Vector3(-0.5f, -0.5f, 0.5f), Colors::Yellow);
-	
-	m_batch->End();
+	m_batch->End();		//	スプライトバッチ終了
 
 
     Present();	//キャンバスに反映させる

@@ -14,6 +14,10 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="FollowCamera.h" />
     <ClInclude Include="Obj3D.h" />
+    <ClInclude Include="Player.h" />
+    <ClInclude Include="DXTKResouces.h" />
+    <ClInclude Include="Singleton.h" />
+    <ClInclude Include="Enemy.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pch.cpp" />
@@ -23,6 +27,9 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="FollowCamera.cpp" />
     <ClCompile Include="Obj3D.cpp" />
+    <ClCompile Include="Player.cpp" />
+    <ClCompile Include="DXTKResouces.cpp" />
+    <ClCompile Include="Enemy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="resource.rc" />
@@ -65,10 +72,25 @@
     <MeshContentTask Include="..\Assets\Leg.FBX">
       <Filter>Assets</Filter>
     </MeshContentTask>
+    <MeshContentTask Include="..\Assets\Wepon.FBX">
+      <Filter>Assets</Filter>
+    </MeshContentTask>
     <MeshContentTask Include="..\Assets\Shoulder.FBX">
       <Filter>Assets</Filter>
     </MeshContentTask>
-    <MeshContentTask Include="..\Assets\Wepon.FBX">
+    <MeshContentTask Include="..\Assets\Shin.FBX">
+      <Filter>Assets</Filter>
+    </MeshContentTask>
+    <MeshContentTask Include="..\Assets\Thigh.FBX">
+      <Filter>Assets</Filter>
+    </MeshContentTask>
+    <MeshContentTask Include="..\Assets\Hip.FBX">
+      <Filter>Assets</Filter>
+    </MeshContentTask>
+    <MeshContentTask Include="..\Assets\Hand.FBX">
+      <Filter>Assets</Filter>
+    </MeshContentTask>
+    <MeshContentTask Include="..\Assets\Wepon1.FBX">
       <Filter>Assets</Filter>
     </MeshContentTask>
   </ItemGroup>

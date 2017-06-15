@@ -23,7 +23,8 @@
 #include "FollowCamera.h"
 #include "Obj3D.h"
 #include <vector>
-
+#include "Player.h"
+#include "Enemy.h"
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -31,18 +32,6 @@
 class Game
 {
 public:
-
-	enum PLAYER_PARTS
-	{
-		PLAYER_PARTS_LEG,
-		PLAYER_PARTS_BODY,
-		PLAYER_PARTS_SHOULDER,
-		PLAYER_PARTS_ARM,
-		PLAYER_PARTS_WEPON,
-		PLAYER_PARTS_HEAD,
-
-		PLAYER_PARTS_NUM
-	};
 
     Game();
 
@@ -135,8 +124,8 @@ private:
 	//	回転カウンター
 	float m_rotateCnt;
 
-	//	キーボード
-	std::unique_ptr<DirectX::Keyboard> m_keyboard;
+	////	キーボード
+	//std::unique_ptr<DirectX::Keyboard> m_keyboard;
 
 	//	自機の座標
 	DirectX::SimpleMath::Vector3 tank_pos;
@@ -149,13 +138,18 @@ private:
 	//	自機2のワールド行列
 	DirectX::SimpleMath::Matrix m_worldTank2;
 
-	//	自機の３Dオブジェクト
-	Obj3D m_ObjPlayer1;
-	Obj3D m_ObjPlayer2;
 
 	std::vector<Obj3D> m_objPlayer;
 	//std::vector<Obj3D> m_ObjPlayer;
 
+	//	各種フラグ
+	bool CannonFlag = false;
+	bool CannonDoingFlag = false;
+	bool HandFlag = false;
 
+	//	プレイヤー
+	Player* m_player;
 
+	//	エネミー
+	std::vector<std::unique_ptr<Enemy>> m_Enemies;
 };
