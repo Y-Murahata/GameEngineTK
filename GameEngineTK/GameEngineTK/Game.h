@@ -11,6 +11,7 @@
 #include <DirectXMath.h>
 #include <DirectXColors.h>
 
+#include <SpriteFont.h>
 #include "StepTimer.h"
 #include <PrimitiveBatch.h>
 #include <VertexTypes.h>>
@@ -25,6 +26,7 @@
 #include <vector>
 #include "Player.h"
 #include "Enemy.h"
+#include "LandShape.h"
 
 
 // A basic game implementation that creates a D3D11 device and
@@ -96,6 +98,10 @@ private:
 	DirectX::SimpleMath::Matrix m_view;
 	DirectX::SimpleMath::Matrix m_proj;
 
+	std::unique_ptr<DirectX::SpriteBatch> m_spriteBatch;
+	std::unique_ptr<DirectX::SpriteFont> m_spriteFont;
+
+
 	//	デバックカメラ
 	std::unique_ptr<DebugCamera> m_debugCamera;
 
@@ -106,7 +112,7 @@ private:
 	std::unique_ptr<DirectX::EffectFactory> m_factory;
 	//	モデル
 	Obj3D m_objSkydome;										//	空
-	Obj3D m_objGround;									//	地面
+	//Obj3D m_objGround;									//	地面
 	std::unique_ptr<DirectX::Model> m_modelSphere;			//	球
 	std::unique_ptr<DirectX::Model> m_modelTeapot;			//	ティーポッド
 	std::unique_ptr<DirectX::Model> m_modelHead;			//	頭
@@ -138,10 +144,11 @@ private:
 	//	自機2のワールド行列
 	DirectX::SimpleMath::Matrix m_worldTank2;
 
+	//	キーボードトラッカー
+	DirectX::Keyboard::KeyboardStateTracker keyTrackerState;
 
 	std::vector<Obj3D> m_objPlayer;
-	//std::vector<Obj3D> m_ObjPlayer;
-
+	
 	//	各種フラグ
 	bool CannonFlag = false;
 	bool CannonDoingFlag = false;
@@ -152,4 +159,10 @@ private:
 
 	//	エネミー
 	std::vector<std::unique_ptr<Enemy>> m_Enemies;
+
+	//	地形
+	LandShape m_landShape;
+
+	//	デバック表示フラグ
+	bool debugDrawFlag = false;
 };

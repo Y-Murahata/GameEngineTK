@@ -5,6 +5,7 @@
 #include "pch.h"
 #include "Game.h"
 #include "Obj3D.h"
+#include "ModelEffect.h"
 
 #include<time.h>
 
@@ -50,7 +51,16 @@ void Game::Initialize(HWND window, int width, int height)
 	m_Camera = std::make_unique<FollowCamera>(m_outputWidth, m_outputHeight);
 
 	//	3Dオブジェクトのメンバ変数
-	Obj3D::InitializeStatic(m_d3dDevice,m_d3dContext,m_Camera.get());
+	Obj3D::InitializeStatic(m_d3dDevice, m_d3dContext, m_Camera.get());
+
+	//	地形の初期化
+	LandShapeCommonDef lsdef;
+	lsdef.pDevice = m_d3dDevice.Get();
+	lsdef.pDeviceContext = m_d3dContext.Get();
+	lsdef.pCamera = m_Camera.get();
+	LandShape::InitializeCommon(lsdef);
+
+
 
 	m_batch = std::make_unique<PrimitiveBatch<VertexPositionColor>>(m_d3dContext.Get());
 
@@ -75,15 +85,21 @@ void Game::Initialize(HWND window, int width, int height)
 		shaderByteCode, byteCodeLength,
 		m_inputLayout.GetAddressOf());
 
+	//	フォントの設定
+	m_spriteBatch = std::make_unique<SpriteBatch>(m_d3dContext.Get());
+	m_spriteFont = std::make_unique<SpriteFont>(m_d3dDevice.Get(), L"myfile.spritefont");
 
 	//	エフェクトファクトリー生成
 	m_factory = std::make_unique<EffectFactory>(m_d3dDevice.Get());
 	(*m_factory).SetDirectory(L"Resouces");
 	
+	//	地形データの読み込み  landshapeファイル名、cmoファイル名
+	m_landShape.Initialize(L"ground200m", L"ground200m");
+	m_landShape.SetRot(Vector3(0, 0, 0));
 
 	//	モデルの読み込み
 	m_objSkydome.LoadModel(L"Resouces/skydome.cmo");
-	m_objGround.LoadModel(L"Resouces/ground200m.cmo");
+	//m_objGround.LoadModel(L"Resouces/ground200m.cmo");
 	m_modelSphere = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/sphere5m.cmo", *m_factory);
 	m_modelTeapot = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/teapod1m.cmo", *m_factory);
 	m_modelHead = Model::CreateFromCMO(m_d3dDevice.Get(), L"Resouces/Leg.cmo", *m_factory);
@@ -135,7 +151,14 @@ void Game::Update(DX::StepTimer const& timer)
     elapsedTime;
 
 	//========== 毎フレーム更新処理はここに書く ==========
-	//	カメラのアップデート
+	// DXTKを管理するインスタンスを取得
+	DXTK::DXTKResources& dxtk = DXTK::DXTKResources::singleton();
+
+	//	キーボードの更新
+	keyTrackerState.Update(dxtk.m_keyboard->GetState());
+
+	//	エフェクトの更新
+	ModelEffectManager::getInstance()->Update();
 
 	{// 自機に追従するカメラ
 		m_Camera->SetTargetPos(m_player->GetPosition());
@@ -160,7 +183,7 @@ void Game::Update(DX::StepTimer const& timer)
 	m_player->Update();
 
 	//	エネミーのアップデート
-	for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end(); itr++) 
+	for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end();itr++) 
 	{
 		//Enemy* enemy = itr->get();		//	デバックし易い
 
@@ -169,11 +192,116 @@ void Game::Update(DX::StepTimer const& timer)
 		(*itr)->Update();					//	短い
 	}
 
+	//	弾丸と敵の当たり判定
+	{
+		const Sphere& bulletSphere = m_player->GetCollisionNodeBullet();
+
+		//	敵の数だけ処理を行う
+		for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end();)
+		{
+			Enemy* enemy = itr->get();
+			//	敵のスフィアを取得
+			const Sphere& enemySphere = enemy->GetCollisionNodeBullet();
+
+			//	二つの球が当たっていたら
+			if (CheckSphere2Sphere(bulletSphere,enemySphere))
+			{
+				//	死ぬエネミーの座標を取得
+				Vector3 postion = enemy->GetPosition();
+
+				//	敵を殺す(殺した敵の次のイテレーターを返す)
+				itr = m_Enemies.erase(itr);
+
+				ModelEffectManager::getInstance()->Entry(
+					L"Resouces/Effect.cmo",	// モデルファイル
+					30,	// 寿命フレーム数
+					postion,
+					Vector3(0, 0, 0),	// 速度
+					Vector3(0, 0, 0),	// 加速度
+					Vector3(0, 0, 0),	// 回転角（初期）
+					Vector3(0, 0, 0),	// 回転角（最終）
+					Vector3(1, 1, 1),	// スケール（初期）
+					Vector3(3, 3, 3)	// スケール（最終）
+				);
+			}
+			else
+			{
+				//	イテレーターを１つ進める
+				itr++;
+			}
+		}
+
+	}
+
 	//	スカイドームの更新処理
 	m_objSkydome.Update();
 	//	地面オブジェの更新
-	m_objGround.Update();
+	m_landShape.Update();
 
+	{//	自機の地形へのめり込みを直す
+		//	自機のボディの当たり判定を取得
+		Sphere sphere = m_player->GetCollisionNodeBody();
+		//	自機のワールド座標を取得
+		Vector3 trans = m_player->GetPosition();
+		//	球の中心から自機センターへのベクトル
+		Vector3 sphere2player = trans - sphere.Center;
+
+		//	めり込み排斥ベクトル
+		Vector3 reject;
+
+		//	地形と球の当たり判定
+		if (m_landShape.IntersectSphere(sphere, &reject))
+		{
+			//	めり込みを解消するようにずらす
+			sphere.Center += reject;
+		}
+		//	球の中心から足元にずらした座標をプレイヤーに渡す
+		m_player->SetPosition(sphere.Center + sphere2player);
+
+		m_player->Calc();
+	}
+
+	{//	自機が地面に立つ処理
+		if (m_player->GetVelosity().y <= 0.0f)
+		{
+			//	自機の頭から足元への線分
+			Segment player_segment;
+			//	自機のワールド座標を取得
+			Vector3 trans = m_player->GetPosition();
+			player_segment.Start = trans + Vector3(0, 1, 0);
+			//	足元よりやや下まで吸着
+			player_segment.End = trans + Vector3(0, -0.5f, 0);
+
+			//	交点座標
+			Vector3 inter;
+			if (m_landShape.IntersectSegment(player_segment, &inter))
+			{
+				//	Y座標のみ交点の位置に移動
+				trans.y = inter.y;
+				//	落下終了
+				m_player->StopJump();
+			}
+			else
+			{
+				//	落下開始
+				m_player->StartFall();
+			}
+
+			//	自機を移動
+			m_player->SetPosition(trans);
+
+			m_player->Calc();
+		}
+
+	}
+
+	//m_objGround.Update();
+
+	//	デバック表示フラグを切り替える
+	if (keyTrackerState.IsKeyPressed(Keyboard::Keys::C))
+	{
+		debugDrawFlag = !debugDrawFlag;
+	}
 
 }
 
@@ -206,14 +334,15 @@ void Game::Render()
 	(*m_effect).Apply(m_d3dContext.Get());
 	m_d3dContext->IASetInputLayout(m_inputLayout.Get());
 
+	m_landShape.Draw();
 	//	地面モデルの描画
-	m_objGround.Draw();
+	//m_objGround.Draw();
 	//	スカイドームの描画
 	m_objSkydome.Draw();
 	
 	//	プレイヤーの描画
 	m_player->Draw();
-	
+	//	敵の描画
 	for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end(); itr++)
 	{
 		//Enemy* enemy = itr->get();		//	デバックし易い
@@ -223,10 +352,31 @@ void Game::Render()
 		(*itr)->Draw();					//	短い
 	}
 
-	m_batch->Begin();	//	スプライトバッチ開始
-	
-	m_batch->End();		//	スプライトバッチ終了
+	//	当たり判定の描画
+	if (debugDrawFlag == true)
+	{
+		//	プレイヤーの描画
+		m_player->DebugDraw();
+		//	敵の描画
+		for (std::vector<std::unique_ptr<Enemy>>::iterator itr = m_Enemies.begin(); itr != m_Enemies.end(); itr++)
+		{
+			(*itr)->DebugDraw();
+		}
+	}
 
+	//	エフェクトの描画
+	ModelEffectManager::getInstance()->Draw();
+
+	//	フォントの表示
+	m_spriteBatch->Begin();
+	
+	if (m_Enemies.size() <= 0)
+	{
+		m_spriteFont->DrawString(m_spriteBatch.get(), L"GameClear!!!!", XMFLOAT2(400, 300));
+
+	}
+
+	m_spriteBatch->End();
 
     Present();	//キャンバスに反映させる
 }

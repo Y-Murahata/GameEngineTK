@@ -46,12 +46,18 @@ public:
 	//	描画
 	void	Draw();
 
+	//	行列更新
+	void Calc();
+
 	//	Setter
 	//	スケーリング
 	void SetScale(const DirectX::SimpleMath::Vector3& scale) { m_scale = scale; }
 	//	並行移動(XYZ)
 	void SetRotationQ(const DirectX::SimpleMath::Quaternion& rotation) { m_rotationQ = rotation;  m_UseQuaternion = true; }
 	void SetRotation(const DirectX::SimpleMath::Vector3& rotation) { m_rotation = rotation;  m_UseQuaternion = false; }
+	//	ワールド座標セッター
+	void SetWorld(const DirectX::SimpleMath::Matrix& world) { m_world = world;}
+
 
 	void SetTranslation(const DirectX::SimpleMath::Vector3& translation) { m_translation = translation;}
 	//	親の3Dオブジェクトのポインタ

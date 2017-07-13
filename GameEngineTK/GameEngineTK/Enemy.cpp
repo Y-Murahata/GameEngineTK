@@ -127,6 +127,15 @@ void Enemy::Initialize()
 	m_Timer = 0;
 	
 	m_DistAngle = 0;
+
+	{//	弾丸用の当たり判定を設定
+		m_CollisionSphereEnemy.Initialize();
+		//	親パーツを指定
+		m_CollisionSphereEnemy.SetParent(&m_obj[ENEMY_PARTS_BODY]);
+		m_CollisionSphereEnemy.SetTrans(Vector3(0, 0, 0));
+		m_CollisionSphereEnemy.SetLoacalRadius(1.0f);
+	}
+
 }
 
 // ----------------------------
@@ -211,6 +220,9 @@ void Enemy::Update()
 
 	// 3Dモデルの更新処理
 	for (auto itr = m_obj.begin(); itr != m_obj.end(); itr++) { itr->Update(); }
+
+	//	当たり判定の更新
+	m_CollisionSphereEnemy.Update();
 }
 
 // ----------------------------
@@ -222,4 +234,17 @@ void Enemy::Draw()
 {
 	// 3Dモデルの描画処理
 	for (auto itr = m_obj.begin(); itr != m_obj.end(); itr++) { itr->Draw(); }
+
+
+}
+
+// ----------------------------
+// デバッグ描画処理
+// 引数無し
+// 戻り値無し
+// ----------------------------
+void Enemy::DebugDraw()
+{
+	//	当たり判定の表示
+	m_CollisionSphereEnemy.Draw();
 }

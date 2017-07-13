@@ -6,6 +6,7 @@
 #include "Singleton.h"
 #include "DXTKResouces.h"
 #include "Obj3D.h"
+#include "CollisionNode.h"
 #include "pch.h"
 #include <SimpleMath.h>
 #include <d3d11_1.h>
@@ -64,17 +65,28 @@ public:
 	void Update();
 	// 描画
 	void Draw();
+	//	当たり判定描画
+	void DebugDraw();
 	// 角度を取得
 	DirectX::SimpleMath::Vector3 GetAngle() { return m_obj[ENEMY_PARTS_BODY].GetRotation(); };
 	// 座標を取得
 	inline  DirectX::SimpleMath::Vector3 GetPosition()  { return m_obj[ENEMY_PARTS_BODY].GetTranslation(); };
 	// ワールド行列を取得
 	 DirectX::SimpleMath::Matrix GetWorldMat() { return m_obj[ENEMY_PARTS_BODY].GetWorld(); };
-	// 座標を設定
+	 // 当たり判定のスフィアを取得
+	 const SphereNode& GetCollisionNodeBullet() { return m_CollisionSphereEnemy; };
+
+	 
+	 // 座標を設定
 	 void SetPosition(DirectX::SimpleMath::Vector3& trans) { m_obj[ENEMY_PARTS_BODY].SetTranslation(trans); };
+
+
 
 	 //	タイマー
 	 int m_Timer;
 	 //	目標の角度
 	 float m_DistAngle;
+
+	 //	当たり判定用スフィア
+	 SphereNode m_CollisionSphereEnemy;
 };

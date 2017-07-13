@@ -26,7 +26,7 @@ void FollowCamera::Update()
 	Vector3 eyepos, refpos;
 
 	//	カメラの位置座標を自機よりすこし上にずらす
-	refpos = m_targetPos + Vector3(0, 2, 0);
+	refpos = m_targetPos + Vector3(0, 1.0f, 0);
 	//	カメラから参照地点までの差分（前方を見るように少しずらす）
 	Vector3 cameraV(0, 0, CAMERADISTANCE);
 	//	自機の後ろに回り込むための回転行列
@@ -37,8 +37,8 @@ void FollowCamera::Update()
 	eyepos = refpos + cameraV;
 
 	//	ゴム紐のアルゴリズム
-	eyepos = GetEyePos() + (eyepos - GetEyePos())*0.05;
-	refpos = GetRefPos() + (refpos - GetRefPos())*0.05;
+	eyepos = GetEyePos() + (eyepos - GetEyePos())*0.1;
+	refpos = GetRefPos() + (refpos - GetRefPos())*0.1;
 
 	//	カメラの参照点を自機にする
 	SetEyePos(eyepos);

@@ -118,6 +118,24 @@ void Player::Initialize()
 		m_obj[PLAYER_PARTS_LEG_L].SetRotation(Vector3(40, 0, 0));
 	}
 
+
+	{//	弾丸用の当たり判定を設定
+		m_CollisionNodeBullet.Initialize();
+		//	親パーツを指定
+		m_CollisionNodeBullet.SetParent(&m_obj[PLAYER_PARTS_HAND_R]);
+		m_CollisionNodeBullet.SetTrans(Vector3(0, 0, 0));
+		m_CollisionNodeBullet.SetLoacalRadius(0.3f);
+	}
+
+	{//ボディの当たり判定を設定
+		m_CollisionSphereBody.Initialize();
+		//	親パーツを指定
+		m_CollisionSphereBody.SetParent(&m_obj[PLAYER_PARTS_BODY]);
+		m_CollisionSphereBody.SetTrans(Vector3(0, 0.0f, 0));
+		m_CollisionSphereBody.SetLoacalRadius(1.0f);
+	}
+
+	m_isJump = false;
 }
 
 // ----------------------------
@@ -133,9 +151,28 @@ void Player::Update()
 	dxtk.UpdateInputState();
 	// キ-ボードの状態
 	Keyboard::State keyboardState = dxtk.m_keyboard->GetState();
-
-	//	キーボードの更新
 	keyTrackerState.Update(dxtk.m_keyboard->GetState());
+	
+	if (keyTrackerState.IsKeyPressed(Keyboard::Keyboard::Space))
+	{
+		//	ジャンプ開始
+		StartJump();
+	}
+
+	//ジャンプ中なら
+	if (m_isJump)
+	{
+		m_Velocity.y -= GRAVITY_ACC;
+
+		if (m_Velocity.y <= -JUMP_SPEED_MAX)
+		{
+			m_Velocity.y = -JUMP_SPEED_MAX;
+		}
+	}
+
+	Vector3 trans = this->GetPosition();
+	trans += m_Velocity;		//	座標を現在位置から移動量分ずらす
+	this->SetPosition(trans);	//	座標を変更する
 
 	//	自機パーツのギミック=========================
 	{
@@ -319,15 +356,8 @@ void Player::Update()
 		//	スペースキーが押されたら元の位置に戻す
 		if (m_FireFlag == true)
 		{
-			//	親を設定
-			m_obj[PLAYER_PARTS_HAND_R].SetParent(&m_obj[PLAYER_PARTS_ARM_R]);
-			//	角度を変更
-			m_obj[PLAYER_PARTS_HAND_R].SetRotation(Vector3(90, 0, 0));
-			//	ローカル座標をセット
-			m_obj[PLAYER_PARTS_HAND_R].SetTranslation(Vector3(0, 0, 0));
-			//	大きさを元に戻す
-			m_obj[PLAYER_PARTS_HAND_R].SetScale(Vector3(1, 1, 1));
 			//	フラグを折る	
+			ResetBullet();
 			m_FireFlag = false;
 		}
 		else
@@ -348,6 +378,11 @@ void Player::Update()
 	// 3Dモデルの更新処理
 	for (auto itr = m_obj.begin(); itr != m_obj.end(); itr++) { itr->Update(); }
 
+	//	弾のたり判定の更新
+	m_CollisionNodeBullet.Update();
+	//	ボディの当たり判定
+	m_CollisionSphereBody.Update();
+
 
 }
 
@@ -360,12 +395,24 @@ void Player::Draw()
 {
 	// 3Dモデルの描画処理
 	for (auto itr = m_obj.begin(); itr != m_obj.end(); itr++) { itr->Draw(); }
+
+
 }
 
+//	デバッグ表示
+void Player::DebugDraw()
+{
+	//	当たり判定用モデルを表示
+	m_CollisionNodeBullet.Draw();
+
+	m_CollisionSphereBody.Draw();
+}
 
 //	弾を発射する
 void Player::FireBullet()
 {
+	ResetBullet();
+
 	//	発射したいパーツのワールド座標を取得
 	Matrix worldm = m_obj[PLAYER_PARTS_HAND_R].GetWorld();
 
@@ -384,12 +431,66 @@ void Player::FireBullet()
 	}
 
 	//	弾丸の速度を設定
-	m_BulletVel[0] = Vector3(0, 0, -0.1f);
+	m_BulletVel[0] = Vector3(0, 0, -0.5f);
 	m_BulletVel[0] = Vector3::Transform(m_BulletVel[0], rotation);
+
+
 
 }
 
 void Player::ResetBullet()
 {
+	//	親を設定
+	m_obj[PLAYER_PARTS_HAND_R].SetParent(&m_obj[PLAYER_PARTS_ARM_R]);
+	//	角度を変更
+	m_obj[PLAYER_PARTS_HAND_R].SetRotation(Vector3(90, 0, 0));
+	//	ローカル座標をセット
+	m_obj[PLAYER_PARTS_HAND_R].SetTranslation(Vector3(0, 0, 0));
+	//	大きさを元に戻す
+	m_obj[PLAYER_PARTS_HAND_R].SetScale(Vector3(1, 1, 1));
 
+}
+
+//	行列更新
+void Player::Calc()
+{
+	// 全パーツ分行列更新
+	for (int i = 0; i < PLAYER_PARTS_NUM; i++)
+	{
+		m_obj[i].Update();
+	}
+
+	m_CollisionSphereBody.Update();
+	// 当たり判定の更新（親の行列更新後に行うこと）
+	m_CollisionNodeBullet.Update();
+}
+
+void Player::StartJump()
+{
+	//	ジャンプ中でないか
+	if (!m_isJump)
+	{
+		//	上方向の初速の設定
+		m_Velocity.y = JUMP_SPEED_FIRST;
+		m_isJump = true;
+	}
+}
+
+//	落下開始
+void Player::StartFall()
+{
+	//	ジャンプ中でないか
+	if (!m_isJump)
+	{
+		//	上方向の初速の設定
+		m_Velocity.y = 0.0f;
+		m_isJump = true;
+	}
+}
+
+//	ジャンプ終了処理
+void Player::StopJump()
+{
+	m_isJump = false;
+	m_Velocity = Vector3::Zero;
 }

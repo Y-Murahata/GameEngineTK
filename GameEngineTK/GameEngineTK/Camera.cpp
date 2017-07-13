@@ -9,7 +9,7 @@ using namespace DirectX::SimpleMath;
 Camera::Camera(float width,float hight)
 {
 	//	ビュー行列の生成
-	m_eyepos = Vector3(0, 0.1f, 5.0f);	//	視点
+	m_eyepos = Vector3(0, 0.1f, 7.0f);	//	視点
 	m_refpos = Vector3(0, 0, 0);	//	参照点
 	m_upvec = Vector3(0, 1.0f, 0);	//	上方向ベクトル
 	m_viemat = Matrix::CreateLookAt(m_eyepos, m_refpos, m_upvec);

@@ -98,5 +98,36 @@ void Obj3D::Draw()
 
 }
 
+//	行列更新
+void Obj3D::Calc()
+{
+	Matrix scalem;
+	Matrix rotm;
+	Matrix transm;
 
+	scalem = Matrix::CreateScale(m_scale);
 
+	if (m_UseQuaternion)
+	{
+		rotm = Matrix::CreateFromQuaternion(m_rotationQ);
+	}
+	else
+	{
+		rotm = Matrix::CreateFromYawPitchRoll(m_rotation.y, m_rotation.x, m_rotation.z);
+	}
+
+	transm = Matrix::CreateTranslation(m_translation);
+
+	// ワールド行列をSRTの順に合成
+	m_world = Matrix::Identity;
+	m_world *= scalem;
+	m_world *= rotm;
+	m_world *= transm;
+
+	// 親行列があれば
+	if (m_parent)
+	{
+		// 親行列を掛ける
+		m_world = m_world * m_parent->GetWorld();
+	}
+}
